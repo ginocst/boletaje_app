@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titulo %}Mis entradas | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque">
+  <h1>Mis entradas</h1>
+  <p id="msg" class="aviso" hidden></p>
+  <div id="entradas" class="grid"></div>
+  <div id="pag-entradas" class="paginas"></div>
+</section>
+<section class="bloque">
+  <h2>Mis compras</h2>
+  <p class="muted">Las órdenes pendientes esperan tu pago. Las entradas se emiten al pagar.</p>
+  <div id="compras"></div>
+  <div id="pag-compras" class="paginas"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function cargarEntradas(pagina = 1) {
+    const r = await api(`/api/mis-entradas/?page=${pagina}&page_size=${TAM}`);
+    if (!r.ok) return;
+    // Cada entrada muestra su código UUID único
+    $('#entradas').innerHTML = r.data.results.length ? r.data.results.map(t => `
+      <div class="ticket">
+        <div class="stub"><b>${new Date(t.fecha_hora).getDate()}</b>
+          <span>${new Date(t.fecha_hora).toLocaleString('es-CL', { month: 'short' })}</span></div>
+        <div class="cuerpo">
+          <span class="cat">${esc(t.sector_nombre)}</span>
+          <h3>${esc(t.evento)}</h3>
+          <p>${esc(t.artista)}. ${esc(t.recinto)}</p>
+          <code>${t.codigo}</code>
+          ${t.estado_orden === 'ENTREGADO' ? '<p class="muted">Ya fue utilizada.</p>' : ''}
+        </div>
+      </div>`).join('') : '<p class="muted">Aún no tienes entradas. <a href="/eventos/">Explora los eventos</a>.</p>';
+    paginador($('#pag-entradas'), r.data.count, pagina, cargarEntradas);
+  }
+
+  async function cargarCompras(pagina = 1) {
+    const r = await api(`/api/compras/?page=${pagina}&page_size=${TAM}`);
+    if (!r.ok) return;
+    $('#compras').innerHTML = r.data.results.length ? `
+      <table>
+        <tr><th>N.º</th><th>Fecha</th><th>Detalle</th><th>Total</th><th>Estado</th><th></th></tr>
+        ${r.data.results.map(o => `<tr>
+          <td>${o.id}</td><td>${fecha(o.creado)}</td>
+          <td>${o.detalles.map(d => `${d.cantidad} x ${esc(d.evento)} (${esc(d.sector_nombre)})`).join('<br>')}</td>
+          <td>${dinero(o.total)}</td><td><span class="estado ${o.estado}">${o.estado}</span></td>
+          <td>${o.estado === 'PENDIENTE' ? `<button class="btn" data-pagar="${o.id}">Pagar</button>` : ''}</td></tr>`).join('')}
+      </table>` : '<p class="muted">Sin compras registradas.</p>';
+    paginador($('#pag-compras'), r.data.count, pagina, cargarCompras);
+  }
+
+  // Pago (simulado) de una orden pendiente. Si no hay stock, el servidor responde 409.
+  $('#compras').addEventListener('click', async e => {
+    const boton = e.target.closest('[data-pagar]');
+    if (!boton) return;
+    const r = await api('/api/compras/pagar/', { method: 'POST', body: { orden: Number(boton.dataset.pagar) } });
+    aviso(r.ok ? 'Pago realizado. ¡Tus entradas ya están disponibles!' : esc(errorTexto(r.data)), r.ok);
+    cargarEntradas(); cargarCompras();
+  });
+
+  alIniciar(() => { if (protegerPagina('ESPECTADOR')) { cargarEntradas(); cargarCompras(); } });
+</script>
+{% endblock %}

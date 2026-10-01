@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Boletaje{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body>
+  <header class="cabecera">
+    <a class="marca" href="/">Boletaje</a>
+    <!-- El menú se dibuja con JS según el rol que viene en el token -->
+    <nav id="menu"></nav>
+  </header>
+
+  <main>{% block contenido %}{% endblock %}</main>
+
+  <!-- FOOTER BASE: datos del alumno (vienen de settings.DATOS_ALUMNO) -->
+  <footer class="pie">
+    <p><strong>{{ ALUMNO.nombre }}</strong>, {{ ALUMNO.seccion }}, {{ ALUMNO.anio }}</p>
+    <p>Boletaje: proyecto Django REST Framework + PostgreSQL. <a href="/api/docs/">Documentación de la API</a></p>
+  </footer>
+
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

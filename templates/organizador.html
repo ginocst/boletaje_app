@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block titulo %}Panel del organizador | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque">
+  <h1>Panel del organizador</h1>
+  <p id="msg" class="aviso" hidden></p>
+
+  <div class="paneles">
+    <form id="f-recinto" class="formulario">
+      <h2>1. Nuevo recinto</h2>
+      <label>Nombre <input name="nombre" required></label>
+      <label>Ciudad <input name="ciudad" required></label>
+      <label>Dirección <input name="direccion" required></label>
+      <button class="btn">Guardar recinto</button>
+    </form>
+
+    <form id="f-evento" class="formulario">
+      <h2>2. Nuevo evento</h2>
+      <label>Nombre <input name="nombre" required></label>
+      <label>Artista o banda <input name="artista" required></label>
+      <label>Categoría
+        <select name="categoria">
+          <option value="CONCIERTO">Concierto</option><option value="FESTIVAL">Festival</option>
+          <option value="TEATRO">Teatro</option><option value="DEPORTE">Deporte</option>
+        </select>
+      </label>
+      <label>Fecha y hora <input name="fecha_hora" type="datetime-local" required></label>
+      <label>Recinto <select name="recinto" id="sel-recinto" required></select></label>
+      <label>Descripción <input name="descripcion"></label>
+      <button class="btn">Guardar evento</button>
+    </form>
+
+    <form id="f-sector" class="formulario">
+      <h2>3. Nuevo sector</h2>
+      <label>Evento <select name="evento" id="sel-evento" required></select></label>
+      <label>Nombre del sector <input name="nombre" placeholder="VIP, Cancha, Tribuna" required></label>
+      <label>Precio <input name="precio" type="number" min="0" required></label>
+      <label>Entradas disponibles (stock) <input name="stock" type="number" min="0" required></label>
+      <button class="btn">Guardar sector</button>
+    </form>
+  </div>
+</section>
+
+<section class="bloque">
+  <h2>Mis eventos</h2>
+  <div id="mis-eventos"></div>
+</section>
+
+<section class="bloque">
+  <h2>Ventas</h2>
+  <div id="ventas"></div>
+  <div id="pag-ventas" class="paginas"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Estados a los que puede pasar una orden (igual que Orden.TRANSICIONES en el backend)
+  const SIGUIENTES = { PENDIENTE: ['PAGADO', 'CANCELADO'], PAGADO: ['ENTREGADO', 'CANCELADO'], ENTREGADO: [], CANCELADO: [] };
+
+  // Recintos y eventos propios (hasta 100, el máximo por página) para los selectores y la lista
+  async function cargar() {
+    const [rec, ev] = await Promise.all([api('/api/recintos/?page_size=100'), api('/api/eventos/?mios=true&page_size=100')]);
+    const eventos = ev.data.results;
+    const sectores = await Promise.all(eventos.map(e => api(`/api/eventos/${e.id}/sectores/`)));
+
+    $('#sel-recinto').innerHTML = rec.data.results.map(r => `<option value="${r.id}">${esc(r.nombre)} (${esc(r.ciudad)})</option>`).join('');
+    $('#sel-evento').innerHTML = eventos.map(e => `<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
+
+    $('#mis-eventos').innerHTML = eventos.map((e, i) => `
+      <article class="evento-admin">
+        <header><div><h3>${esc(e.nombre)}</h3><p class="muted">${fecha(e.fecha_hora)}. ${esc(e.recinto_detalle.nombre)}</p></div>
+          <button class="link" data-borrar="${e.id}">Eliminar evento</button></header>
+        ${sectores[i].data.map(s => `
+          <div class="fila-sector">
+            <span>${esc(s.nombre)}</span><span>${dinero(s.precio)}</span>
+            <label>Stock <input type="number" min="0" value="${s.stock}" id="stock-${s.id}"></label>
+            <button class="link" data-stock="${s.id}">Guardar stock</button>
+          </div>`).join('') || '<p class="muted">Sin sectores. Agrégalos en el paso 3.</p>'}
+      </article>`).join('') || '<p class="muted">Aún no has creado eventos.</p>';
+    cargarVentas();
+  }
+
+  // Ventas de los eventos de este organizador (paginadas)
+  async function cargarVentas(pagina = 1) {
+    const ord = await api(`/api/compras/?page=${pagina}&page_size=${TAM}`);
+    if (!ord.ok) return;
+    $('#ventas').innerHTML = ord.data.results.length ? `
+      <table>
+        <tr><th>N.º</th><th>Cliente</th><th>Detalle</th><th>Total</th><th>Estado</th><th>Cambiar a</th></tr>
+        ${ord.data.results.map(o => `<tr>
+          <td>${o.id}</td><td>${esc(o.usuario)}</td>
+          <td>${o.detalles.map(d => `${d.cantidad} x ${esc(d.evento)} (${esc(d.sector_nombre)})`).join('<br>')}</td>
+          <td>${dinero(o.total)}</td><td><span class="estado ${o.estado}">${o.estado}</span></td>
+          <td>${SIGUIENTES[o.estado].length ? `
+            <select id="estado-${o.id}">${SIGUIENTES[o.estado].map(s => `<option>${s}</option>`).join('')}</select>
+            <button class="link" data-estado="${o.id}">Aplicar</button>` : ''}</td></tr>`).join('')}
+      </table>` : '<p class="muted">Todavía no hay ventas.</p>';
+    paginador($('#pag-ventas'), ord.data.count, pagina, cargarVentas);
+  }
+
+  // Crea recursos con los formularios (recinto, evento, sector)
+  async function enviar(form, url) {
+    const r = await api(url, { method: 'POST', body: Object.fromEntries(new FormData(form)) });
+    aviso(r.ok ? 'Guardado correctamente.' : esc(errorTexto(r.data)), r.ok);
+    if (r.ok) { form.reset(); cargar(); }
+  }
+  $('#f-recinto').addEventListener('submit', e => { e.preventDefault(); enviar(e.target, '/api/recintos/'); });
+  $('#f-evento').addEventListener('submit', e => { e.preventDefault(); enviar(e.target, '/api/eventos/'); });
+  $('#f-sector').addEventListener('submit', e => { e.preventDefault(); enviar(e.target, `/api/eventos/${e.target.evento.value}/sectores/`); });
+
+  // Acciones sobre eventos, sectores y órdenes (un solo listener)
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-borrar],[data-stock],[data-estado]');
+    if (!b) return;
+    let r;
+    if (b.dataset.borrar) r = await api(`/api/eventos/${b.dataset.borrar}/`, { method: 'DELETE' });
+    if (b.dataset.stock) r = await api(`/api/sectores/${b.dataset.stock}/`, { method: 'PATCH', body: { stock: Number($(`#stock-${b.dataset.stock}`).value) } });
+    if (b.dataset.estado) r = await api(`/api/compras/${b.dataset.estado}/estado/`, { method: 'PATCH', body: { estado: $(`#estado-${b.dataset.estado}`).value } });
+    aviso(r.ok ? 'Cambio aplicado.' : esc(errorTexto(r.data)), r.ok);
+    cargar();
+  });
+
+  alIniciar(() => { if (protegerPagina('ORGANIZADOR')) cargar(); });
+</script>
+{% endblock %}

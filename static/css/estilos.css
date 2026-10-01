@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Boletaje: estilos propios
+   ========================================================================== */
+:root {
+  --tinta: #15173d; /* fondo oscuro: cabecera, hero, pie */
+  --papel: #f3f5fb; /* fondo de las páginas */
+  --blanco: #ffffff;
+  --magenta: #d91e6e; /* acciones principales */
+  --boleto: #ffc83d; /* talón de la entrada */
+  --texto: #1d2040;
+  --suave: #5a5f7d;
+  --linea: #d9dcec;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--papel); color: var(--texto);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; line-height: 1.55;
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+main { flex: 1; }
+h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 .6rem; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; }
+h2 { font-size: 1.5rem; font-weight: 800; }
+h3 { font-size: 1.1rem; }
+a { color: var(--magenta); }
+.muted { color: var(--suave); margin: .15rem 0; }
+:focus-visible { outline: 3px solid var(--boleto); outline-offset: 2px; }
+
+/* ---- Cabecera y pie ---- */
+.cabecera {
+  background: var(--tinta); color: var(--blanco); padding: .9rem 1.5rem;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem;
+}
+.marca { color: var(--boleto); font-size: 1.5rem; font-weight: 800; text-decoration: none; letter-spacing: -0.03em; }
+#menu { display: flex; flex-wrap: wrap; align-items: center; gap: 1.1rem; }
+#menu a:not(.btn) { color: var(--blanco); text-decoration: none; }
+#menu a:not(.btn):hover { text-decoration: underline; }
+.usuario { color: var(--boleto); }
+.pie { background: var(--tinta); color: #c9cbe6; padding: 1.4rem 1.5rem; font-size: .9rem; }
+.pie p { margin: .2rem 0; }
+.pie strong { color: var(--blanco); }
+.pie a { color: var(--boleto); }
+
+/* ---- Botones ---- */
+.btn, button.btn {
+  display: inline-block; background: var(--magenta); color: var(--blanco); border: 0; cursor: pointer;
+  padding: .65rem 1.2rem; border-radius: 8px; font: inherit; font-weight: 700; text-decoration: none;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn:disabled { background: var(--linea); color: var(--suave); cursor: not-allowed; }
+.btn-claro { background: transparent; color: inherit; border: 2px solid currentColor; }
+button.link { background: none; border: 0; color: var(--magenta); cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
+.cabecera button.link { color: var(--blanco); }
+.acciones { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1rem; }
+
+/* ---- Landing ---- */
+.hero {
+  background: var(--tinta); color: var(--blanco); padding: 4rem 1.5rem 5rem;
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: center;
+}
+.hero-texto { max-width: 34rem; justify-self: end; }
+.hero p { font-size: 1.15rem; color: #d7d9ef; }
+.hero .btn-claro { color: var(--blanco); }
+
+/* Entrada decorativa del hero (el elemento memorable de la página) */
+.entrada-demo { max-width: 26rem; transform: rotate(-3deg); }
+.entrada-demo-sup {
+  background: var(--boleto); color: var(--tinta); padding: 2rem 1.6rem; border-radius: 16px 16px 0 0;
+  display: flex; flex-direction: column; gap: .3rem;
+}
+.entrada-demo-sup strong { font-size: 2rem; letter-spacing: -0.03em; line-height: 1.1; }
+.entrada-demo-inf {
+  background: var(--blanco); color: var(--tinta); padding: 1.2rem 1.6rem; border-radius: 0 0 16px 16px;
+  border-top: 3px dashed var(--tinta); display: flex; flex-direction: column; gap: .3rem;
+}
+.entrada-demo-inf code { font-size: .8rem; word-break: break-all; }
+
+/* ---- Estructura de página ---- */
+.bloque { max-width: 68rem; margin: 0 auto; padding: 2.2rem 1.5rem; }
+.estrecho { max-width: 28rem; }
+.pasos { padding-left: 1.2rem; max-width: 40rem; }
+.pasos li { margin-bottom: .6rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 1.4rem; }
+
+/* ---- Entrada / tarjeta de evento ---- */
+.ticket {
+  display: grid; grid-template-columns: 5.5rem 1fr; position: relative; text-decoration: none;
+  background: var(--blanco); color: var(--texto); border-radius: 14px; box-shadow: 0 2px 10px rgba(21, 23, 61, .12);
+}
+a.ticket:hover { box-shadow: 0 6px 18px rgba(21, 23, 61, .22); }
+.ticket .stub {
+  background: var(--boleto); color: var(--tinta); border-radius: 14px 0 0 14px; border-right: 3px dashed var(--tinta);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.ticket .stub b { font-size: 2.2rem; line-height: 1; }
+/* Muescas del perforado (mismo color que el fondo de la página) */
+.ticket::before, .ticket::after {
+  content: ""; position: absolute; left: calc(5.5rem - 11px); width: 22px; height: 22px;
+  background: var(--papel); border-radius: 50%;
+}
+.ticket::before { top: -11px; }
+.ticket::after { bottom: -11px; }
+.ticket .cuerpo { padding: 1rem 1.1rem; overflow-wrap: anywhere; }
+.ticket .cuerpo p { margin: .15rem 0; }
+.ticket code { display: block; margin-top: .5rem; font-size: .75rem; color: var(--suave); }
+.cat { font-size: .85rem; font-weight: 700; color: var(--magenta); }
+.precio { font-weight: 700; margin-top: .4rem !important; }
+
+/* ---- Formularios ---- */
+.filtros, .formulario { display: grid; gap: .8rem; }
+.filtros { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); align-items: end; margin: 1rem 0 2rem; }
+label {
+  display: grid; gap: .25rem; font-weight: 700; font-size: .92rem;
+  min-width: 0;                      /* nueva: deja que el campo se encoja dentro de su columna */
+}
+input, select {
+  width: 100%; min-width: 0;         /* nuevas: el campo ocupa solo el ancho de su columna */
+  height: 2.6rem;                    /* nueva: todos los campos, incluido el desplegable, miden lo mismo */
+  font: inherit; padding: .55rem .7rem; border: 1px solid var(--linea); border-radius: 8px; background: var(--blanco);
+}
+.paneles { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.4rem; align-items: start; }
+.paneles .formulario { background: var(--blanco); padding: 1.2rem; border-radius: 14px; }
+
+/* ---- Detalle de evento, tablas, avisos ---- */
+.sector {
+  display: grid; grid-template-columns: 1fr auto 5rem auto; gap: 1rem; align-items: center;
+  background: var(--blanco); padding: 1rem 1.2rem; border-radius: 12px; margin-bottom: .8rem;
+}
+.sector h3, .sector p { margin: 0; }
+table { width: 100%; border-collapse: collapse; background: var(--blanco); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { background: var(--tinta); color: var(--blanco); }
+.total { font-size: 1.3rem; text-align: right; }
+.aviso { padding: .8rem 1rem; border-radius: 8px; font-weight: 700; }
+.aviso.ok { background: #dff5e6; color: #14532d; }
+.aviso.error { background: #fde2e8; color: #8a1235; }
+.estado { padding: .15rem .6rem; border-radius: 99px; font-size: .82rem; font-weight: 700; background: var(--linea); }
+.estado.PAGADO { background: #dff5e6; color: #14532d; }
+.estado.ENTREGADO { background: #dbe8ff; color: #16388a; }
+.estado.CANCELADO { background: #fde2e8; color: #8a1235; }
+.estado.PENDIENTE { background: #fff0c2; color: #6b4b00; }
+.evento-admin { background: var(--blanco); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.evento-admin header { display: flex; justify-content: space-between; gap: 1rem; }
+.fila-sector { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: .5rem 0; border-top: 1px solid var(--linea); }
+.fila-sector label { display: flex; align-items: center; gap: .4rem; }
+.fila-sector input { width: 6rem; }
+
+/* ---- Móvil ---- */
+@media (max-width: 800px) {
+  .hero { grid-template-columns: 1fr; padding: 2.5rem 1.2rem 3.5rem; }
+  .hero-texto { justify-self: start; }
+  .entrada-demo { justify-self: center; }
+  .sector { grid-template-columns: 1fr 1fr; }
+  table { display: block; overflow-x: auto; }
+}
+
+/* ---- Paginador ---- */
+.paginas { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+.paginas:empty { display: none; }
+.paginas button:disabled { color: var(--suave); cursor: not-allowed; text-decoration: none; }

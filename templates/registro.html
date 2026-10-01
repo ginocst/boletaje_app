@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Crear cuenta | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque estrecho">
+  <h1>Crear cuenta</h1>
+  <form id="form" class="formulario">
+    <label>Usuario <input name="username" required></label>
+    <label>Correo <input name="email" type="email" required></label>
+    <label>Contraseña (mínimo 8 caracteres, no solo números) <input name="password" type="password" minlength="8" required></label>
+    <label>Quiero ingresar como
+      <select name="rol">
+        <option value="ESPECTADOR">Espectador (comprar entradas)</option>
+        <option value="ORGANIZADOR">Organizador (publicar eventos)</option>
+      </select>
+    </label>
+    <button class="btn">Crear cuenta</button>
+  </form>
+  <p id="msg" class="aviso" hidden></p>
+  <p>¿Ya tienes cuenta? <a href="/login/">Ingresa</a></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $('#form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const datos = Object.fromEntries(new FormData(e.target));
+    const reg = await api('/api/auth/registro/', { method: 'POST', body: datos });
+    if (!reg.ok) return aviso(esc(errorTexto(reg.data)), false);
+
+    // Cuenta creada: inicia sesión automáticamente
+    const login = await api('/api/auth/login/', { method: 'POST', body: { username: datos.username, password: datos.password } });
+    Sesion.guardar(login.data);
+    location.href = Sesion.rol() === 'ORGANIZADOR' ? '/organizador/' : '/eventos/';
+  });
+</script>
+{% endblock %}

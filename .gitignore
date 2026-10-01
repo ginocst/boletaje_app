@@ -1,0 +1,10 @@
+# Secretos y entorno virtual
+.env
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Archivos estáticos recopilados (producción)
+staticfiles/

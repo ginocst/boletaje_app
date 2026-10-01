@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Eventos | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque">
+  <h1>Eventos</h1>
+
+  <!-- Cada campo se envía como parámetro a /api/eventos/ (django-filter) -->
+  <form id="filtros" class="filtros">
+    <label>Buscar <input name="search" placeholder="Artista, evento o recinto"></label>
+    <label>Categoría
+      <select name="categoria">
+        <option value="">Todas</option>
+        <option value="CONCIERTO">Concierto</option>
+        <option value="FESTIVAL">Festival</option>
+        <option value="TEATRO">Teatro</option>
+        <option value="DEPORTE">Deporte</option>
+      </select>
+    </label>
+    <label>Ciudad <input name="ciudad"></label>
+    <label>Precio mínimo <input name="precio_min" type="number" min="0"></label>
+    <label>Precio máximo <input name="precio_max" type="number" min="0"></label>
+    <label>Desde <input name="desde" type="date"></label>
+    <button class="btn">Filtrar</button>
+  </form>
+
+  <div id="lista" class="grid"></div>
+  <div id="paginas" class="paginas"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function buscar(pagina = 1) {
+    // Arma la query solo con los campos que tienen valor
+    const params = new URLSearchParams({ ordering: 'fecha_hora', page: pagina, page_size: TAM });
+    new FormData($('#filtros')).forEach((valor, campo) => { if (valor) params.append(campo, valor); });
+
+    const r = await api('/api/eventos/?' + params);
+    if (!r.ok) return;
+    $('#lista').innerHTML = r.data.results.length
+      ? r.data.results.map(tarjetaEvento).join('')
+      : '<p class="muted">No hay eventos con esos filtros. Prueba ampliando la búsqueda.</p>';
+    paginador($('#paginas'), r.data.count, pagina, buscar);
+  }
+  $('#filtros').addEventListener('submit', e => { e.preventDefault(); buscar(1); });
+  buscar();
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Boletaje: entradas para eventos y conciertos{% endblock %}
+
+{% block contenido %}
+<!-- LANDING PAGE -->
+<section class="hero">
+  <div class="hero-texto">
+    <h1>Tu lugar en la primera fila</h1>
+    <p>Compra entradas para conciertos, festivales, teatro y deporte. Arma tu carro, paga
+       y recibe un código único por cada entrada.</p>
+    <div class="acciones">
+      <a class="btn" href="/eventos/">Ver eventos</a>
+      <a class="btn btn-claro" href="/registro/">Crear cuenta</a>
+    </div>
+  </div>
+  <!-- Entrada decorativa: muestra la idea central del producto (código único por ticket) -->
+  <div class="entrada-demo" aria-hidden="true">
+    <div class="entrada-demo-sup"><span>Entrada N.º 0001</span><strong>Cancha General</strong></div>
+    <div class="entrada-demo-inf"><span>Código único</span><code>9b1e4c7a-52d0-4f3e-8a11-c07d2e6b93f4</code></div>
+  </div>
+</section>
+
+<section class="bloque">
+  <h2>Próximos eventos</h2>
+  <div id="lista" class="grid"><p class="muted">Cargando eventos...</p></div>
+</section>
+
+<section class="bloque">
+  <h2>Comprar es simple</h2>
+  <ol class="pasos">
+    <li><strong>Elige tu evento.</strong> Filtra por categoría, ciudad, fecha o precio.</li>
+    <li><strong>Arma tu carro.</strong> Se guarda en tu cuenta: puedes seguir desde otro dispositivo.</li>
+    <li><strong>Paga y recibe tus entradas.</strong> Cada una llega con su código único.</li>
+  </ol>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Muestra los 3 eventos más próximos (endpoint público)
+  api('/api/eventos/?ordering=fecha_hora&page_size=3').then(r => {
+    $('#lista').innerHTML = r.ok && r.data.results.length
+      ? r.data.results.map(tarjetaEvento).join('')
+      : '<p class="muted">Aún no hay eventos publicados.</p>';
+  });
+</script>
+{% endblock %}

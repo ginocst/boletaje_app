@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titulo %}Mi carro | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque">
+  <h1>Mi carro</h1>
+  <div id="carro"></div>
+  <p id="msg" class="aviso" hidden></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function cargar() {
+    const r = await api('/api/carro-tickets/');
+    if (!r.ok) return;
+    const { items, total } = r.data;
+    if (!items.length) {
+      $('#carro').innerHTML = '<p class="muted">Tu carro está vacío.</p><a class="btn" href="/eventos/">Buscar eventos</a>';
+      return;
+    }
+    $('#carro').innerHTML = `
+      <table>
+        <tr><th>Evento</th><th>Sector</th><th>Precio</th><th>Cantidad</th><th>Subtotal</th><th></th></tr>
+        ${items.map(i => `<tr>
+          <td>${esc(i.evento)}</td><td>${esc(i.sector_nombre)}</td><td>${dinero(i.precio)}</td>
+          <td>${i.cantidad}</td><td>${dinero(i.subtotal)}</td>
+          <td><button class="link" data-quitar="${i.id}">Quitar</button></td></tr>`).join('')}
+      </table>
+      <p class="total">Total: <strong>${dinero(total)}</strong></p>
+      <div class="acciones">
+        <button class="btn" id="pagar-ahora">Pagar ahora</button>
+        <button class="btn btn-claro" id="confirmar">Confirmar pedido</button>
+        <button class="btn btn-claro" id="vaciar">Vaciar carro</button>
+      </div>
+      <p class="muted"><strong>Pagar ahora:</strong> confirma y paga en un solo paso.
+        <strong>Confirmar pedido:</strong> deja una orden pendiente que puedes pagar después.
+        El stock se descuenta recién al pagar.</p>`;
+  }
+
+  $('#carro').addEventListener('click', async e => {
+    const quitar = e.target.closest('[data-quitar]');
+    if (quitar) { await api(`/api/carro-tickets/${quitar.dataset.quitar}/`, { method: 'DELETE' }); cargar(); }
+
+    if (e.target.id === 'vaciar') { await api('/api/carro-tickets/', { method: 'DELETE' }); cargar(); }
+
+    if (e.target.id === 'pagar-ahora') { // pago directo: checkout + pago en una sola transacción
+      const r = await api('/api/compras/pagar/', { method: 'POST' });
+      if (r.ok) location.href = '/mis-entradas/';
+      else aviso(esc(errorTexto(r.data)), false); // ej: stock insuficiente (409)
+    }
+
+    if (e.target.id === 'confirmar') { // CHECKOUT: carro -> orden(es) PENDIENTE
+      const r = await api('/api/compras/checkout/', { method: 'POST' });
+      if (r.ok) location.href = '/mis-entradas/'; // allí se paga cada orden pendiente
+      else aviso(esc(errorTexto(r.data)), false);
+    }
+  });
+
+  alIniciar(() => { if (protegerPagina('ESPECTADOR')) cargar(); });
+</script>
+{% endblock %}

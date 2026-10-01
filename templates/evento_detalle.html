@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Evento | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque">
+  <a href="/eventos/">Volver a eventos</a>
+  <div id="evento"><p class="muted">Cargando...</p></div>
+  <h2>Entradas disponibles</h2>
+  <div id="sectores"></div>
+  <p id="msg" class="aviso" hidden></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ID = {{ pk }}; // id del evento, viene de la URL
+
+  async function cargar() {
+    // Datos del evento y sus sectores (ambos endpoints públicos)
+    const [ev, sec] = await Promise.all([api(`/api/eventos/${ID}/`), api(`/api/eventos/${ID}/sectores/`)]);
+    if (!ev.ok) { location.href = '/eventos/'; return; }
+    const e = ev.data;
+    $('#evento').innerHTML = `
+      <span class="cat">${esc(e.categoria_display)}</span>
+      <h1>${esc(e.nombre)}</h1>
+      <p><strong>${esc(e.artista)}</strong></p>
+      <p>${fecha(e.fecha_hora)}. ${esc(e.recinto_detalle.nombre)}, ${esc(e.recinto_detalle.direccion)}, ${esc(e.recinto_detalle.ciudad)}.</p>
+      <p>${esc(e.descripcion)}</p>`;
+
+    $('#sectores').innerHTML = sec.data.map(s => `
+      <div class="sector">
+        <div><h3>${esc(s.nombre)}</h3>
+          <p class="muted">${s.stock > 0 ? `Quedan ${s.stock} entradas` : 'Agotado'}</p></div>
+        <strong>${dinero(s.precio)}</strong>
+        <input type="number" min="1" value="1" id="cant-${s.id}" ${s.stock ? '' : 'disabled'} aria-label="Cantidad">
+        <button class="btn" data-sector="${s.id}" ${s.stock ? '' : 'disabled'}>Agregar al carro</button>
+      </div>`).join('') || '<p class="muted">Este evento aún no tiene sectores.</p>';
+  }
+
+  // Un solo listener para todos los botones "Agregar al carro"
+  $('#sectores').addEventListener('click', async e => {
+    const boton = e.target.closest('[data-sector]');
+    if (!boton) return;
+    if (!Sesion.rol()) { location.href = '/login/'; return; }
+    if (Sesion.rol() !== 'ESPECTADOR') return aviso('Solo los espectadores pueden comprar entradas.', false);
+
+    const sector = boton.dataset.sector;
+    const r = await api('/api/carro-tickets/', {
+      method: 'POST', body: { sector: Number(sector), cantidad: Number($(`#cant-${sector}`).value) } });
+    r.ok ? aviso('Agregado a tu carro. <a href="/carro/">Ver mi carro</a>', true) : aviso(esc(errorTexto(r.data)), false);
+  });
+
+  cargar();
+</script>
+{% endblock %}

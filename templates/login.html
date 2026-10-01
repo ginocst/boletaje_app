@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}Ingresar | Boletaje{% endblock %}
+
+{% block contenido %}
+<section class="bloque estrecho">
+  <h1>Ingresar</h1>
+  <form id="form" class="formulario">
+    <label>Usuario <input name="username" required autofocus></label>
+    <label>Contraseña <input name="password" type="password" required></label>
+    <button class="btn">Ingresar</button>
+  </form>
+  <p id="msg" class="aviso" hidden></p>
+  <p>¿No tienes cuenta? <a href="/registro/">Crea una</a></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $('#form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const r = await api('/api/auth/login/', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+    if (!r.ok) return aviso('Usuario o contraseña incorrectos.', false);
+    Sesion.guardar(r.data);   // guarda access + refresh
+    location.href = Sesion.rol() === 'ORGANIZADOR' ? '/organizador/' : '/eventos/';
+  });
+</script>
+{% endblock %}
